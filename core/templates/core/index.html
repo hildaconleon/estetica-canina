@@ -1,0 +1,93 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://kit.fontawesome.com/64d58efce2.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+  <title>SGEC — Login</title>
+</head>
+
+<body>
+  <div class="container">
+    <div class="forms-container">
+      <div class="signin-signup">
+
+        <!-- ══════════ LOGIN FORM ══════════ -->
+        <form class="sign-in-form" method="POST" action="{% url 'login' %}">
+          {% csrf_token %}
+          <h2 class="title">Iniciar Sesión</h2>
+
+          <!-- Mensajes de error Django -->
+          {% if messages %}
+            {% for message in messages %}
+              <div style="color:#e74a3b; background:#fff0f0; padding:12px; border-radius:8px; margin-bottom:10px; font-size:14px; border:1px solid #fecaca;">
+                ⚠️ {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <div class="input-field">
+            <i class="fas fa-user"></i>
+            <input type="text" name="username" placeholder="Usuario" required autofocus />
+          </div>
+
+          <div class="input-field">
+            <i class="fas fa-lock"></i>
+            <input type="password" name="password" placeholder="Contraseña" required />
+          </div>
+
+          <input type="submit" value="Ingresar" class="btn solid" />
+          <p class="social-text">Sistema de Gestión · Estética Canina</p>
+        </form>
+
+        <!-- ══════════ SIGN UP (deshabilitado) ══════════ -->
+        <form class="sign-up-form">
+          <h2 class="title">Registro</h2>
+          <p style="color:#858796; font-size:14px; text-align:center;">
+            Contacta al administrador para crear una cuenta nueva.
+          </p>
+        </form>
+
+      </div>
+    </div>
+
+    <!-- ══════════ PANELES DECORATIVOS ══════════ -->
+    <div class="panels-container">
+      <div class="panel left-panel">
+        <div class="content">
+          <h3>¿Nuevo aquí?</h3>
+          <p>
+            Bienvenido a la Estética Canina.
+            Tu mejor amigo merece verse y sentirse increíble.
+          </p>
+          <button class="btn transparent" id="sign-up-btn">Registrarse</button>
+        </div>
+        <img src="{% static 'core/img/dog1.svg' %}" class="image" alt="" onerror="this.style.display='none'" />
+      </div>
+
+      <div class="panel right-panel">
+        <div class="content">
+          <h3>¿Ya tienes cuenta?</h3>
+          <p>
+            Inicia sesión y administra citas, clientes y servicios de tu estética.
+          </p>
+          <button class="btn transparent" id="sign-in-btn">Iniciar Sesión</button>
+        </div>
+        <img src="{% static 'core/img/dog2.svg' %}" class="image" alt="" onerror="this.style.display='none'" />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Solo animación del panel, sin fetch ni login por JS
+    const signUpBtn = document.getElementById('sign-up-btn');
+    const signInBtn = document.getElementById('sign-in-btn');
+    const container = document.querySelector('.container');
+
+    if (signUpBtn) signUpBtn.addEventListener('click', () => container.classList.add('sign-up-mode'));
+    if (signInBtn) signInBtn.addEventListener('click', () => container.classList.remove('sign-up-mode'));
+  </script>
+</body>
+</html>

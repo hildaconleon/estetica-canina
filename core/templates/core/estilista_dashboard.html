@@ -1,0 +1,83 @@
+{% extends "core/base_dashboard.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1 style="color: #5a5c69; font-size: 1.5rem;">Mis Servicios Asignados</h1>
+    <div style="font-size: 0.9rem; background: white; padding: 10px; border-radius: 8px; border-left: 4px solid #4e73df;">
+        Hoy: <strong>{% now "d F Y" %}</strong>
+    </div>
+</div>
+
+<div class="card-table">
+    <div class="card-header">
+        Lista de Trabajo de {{ empleado.nombre }}
+    </div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Hora</th>
+                    <th>Mascota</th>
+                    <th>Raza</th>
+                    <th>Servicio</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cita in citas %}
+                <tr>
+                    <td><strong>{{ cita.hora|time:"H:i" }}</strong></td>
+                    <td><span style="color: #4e73df; font-weight: bold;">{{ cita.mascota.nombre }}</span></td>
+                    <td>{{ cita.raza_nombre }}</td>
+                    <td>{{ cita.servicio_nombre }}</td>
+                    <td>
+                        <span class="badge 
+                            {% if 'Pendiente' in cita.nombre_estado %}bg-pending
+                            {% elif 'Proceso' in cita.nombre_estado %}bg-process
+                            {% else %}bg-done{% endif %}">
+                            {{ cita.nombre_estado }}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn-sm btn-start" onclick="actualizarCita({{ cita.clave }}, 2)">▶️ Iniciar</button>
+                            <button class="btn-sm btn-finish" onclick="actualizarCita({{ cita.clave }}, 3)">✅ Listo</button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align:center; padding:50px; color:#858796;">
+                        <img src="https://cdn-icons-png.flaticon.com/512/6134/6134065.png" width="50" style="opacity: 0.3;"><br><br>
+                        No tienes citas programadas para hoy.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function actualizarCita(citaId, nuevoEstadoId) {
+    fetch(`/api/citas/${citaId}/estado/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ estado_id: nuevoEstadoId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.ok) {
+            location.reload();
+        } else {
+            alert("Error: " + data.error);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
+{% endblock %}
