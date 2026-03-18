@@ -13,31 +13,84 @@ from .models import (
     Servicio, Pago, TipoPago
 )
 
-# ── LOGIN CON REDIRECCIÓN DINÁMICA ───────────────────────────────────────────
+# ── LOGIN CON REDIRECCIÓN DINÁMICA (3 NIVELES) ────────────────
+@csrf_exempt 
 def login_view(request):
     if request.method == "POST":
-        username_p = request.POST.get("username")
-        password_p = request.POST.get("password")
+        # --- DETECCIÓN DE ORIGEN ---
+        if request.content_type == 'application/json':
+            body = json.loads(request.body)
+            username_p = body.get("username")
+            password_p = body.get("password")
+            es_api = True # Es el móvil
+        else:
+            username_p = request.POST.get("username")
+            password_p = request.POST.get("password")
+            es_api = False # Es la web
         
         user = authenticate(request, username=username_p, password=password_p)
         
         if user is not None:
             login(request, user)
             
-            # Intentamos vincular la sesión con un Empleado de la base de datos
+            # --- LÓGICA DE NOMBRES Y ROLES ---
+            rol = "estilista"
+            nombre_completo = user.username 
+            
             try:
-                empleado = Empleado.objects.get(usuario=user.username)
+                # Usamos __iexact para ignorar mayúsculas/minúsculas
+                empleado = Empleado.objects.get(usuario__iexact=user.username)
                 request.session['empleado_id'] = empleado.clave
-                request.session['empleado_nombre'] = empleado.nombre.strip()
+                
+                # --- LA MAGIA DE LOS 3 ROLES ---
+                usuario_str = empleado.usuario.lower()
+                
+                if user.is_superuser or usuario_str == 'hilda':
+                    rol = "gerencia"
+                    nombre_completo = f"{empleado.nombre} (Gerente)"
+                elif user.is_staff or usuario_str == 'mariat':
+                    rol = "admin"
+                    nombre_completo = f"{empleado.nombre} (Recepcionista)"
+                else:
+                    rol = "estilista"
+                    nombre_completo = f"{empleado.nombre} (Estilista)"
+                    
+                request.session['empleado_nombre'] = nombre_completo
+                
             except Empleado.DoesNotExist:
-                request.session['empleado_nombre'] = user.username
+                # Si el usuario no está en la tabla Empleado pero existe en Django
+                if user.is_superuser:
+                    rol = "gerencia"
+                    nombre_completo = f"{user.username} (Gerente)"
+                elif user.is_staff:
+                    rol = "admin"
+                    nombre_completo = f"{user.username} (Admin)"
+                else:
+                    rol = "usuario"
+                    nombre_completo = user.username
+                request.session['empleado_nombre'] = nombre_completo
 
-            # Redirección según rol
-            if user.is_staff:
-                return redirect('/admin/')
+            # --- RESPUESTA PARA EL MÓVIL (FLUTTER) ---
+            if es_api:
+                return JsonResponse({
+                    "ok": True, 
+                    "mensaje": "Bienvenido", 
+                    "rol": rol,
+                    "nombre": user.username 
+                })
+            
+            # --- REDIRECCIÓN PARA LA WEB ---
+            if rol == "gerencia":
+                return redirect('gerencia')          # ¡MANDA A HILDA A GERENCIA!
+            elif rol == "admin":
+                return redirect('administrativo')    # ¡MANDA A MARIAT A RECEPCIÓN!
             else:
-                return redirect('estilista_dashboard')
+                return redirect('estilista_dashboard') # MANDA A ESTILISTAS A SUS CITAS
+                
         else:
+            # Error de credenciales
+            if es_api:
+                return JsonResponse({"ok": False, "error": "Credenciales inválidas"}, status=401)
             messages.error(request, "Usuario o contraseña incorrectos")
             
     return render(request, "core/index.html")
@@ -47,9 +100,22 @@ def logout_view(request):
     request.session.flush()
     return redirect('login')
 
-# ── VISTA PARA ADMINISTRADOR (HILDA) ──────────────────────────────────────────
+# ── VISTA PARA GERENCIA (HILDA) ─────────────────────────────────
+def gerencia(request):
+    # Protegemos la ruta para que solo superusuarios o hilda entren
+    if not request.user.is_authenticated:
+        return redirect('login')
+        
+    nombre = request.session.get('empleado_nombre', request.user.username)
+    iniciales = ''.join(p[0].upper() for p in nombre.split()[:2]) if nombre else 'U'
+    
+    return render(request, "core/gerencia.html", {
+        'empleado': {'nombre': nombre, 'iniciales': iniciales}
+    })
+
+# ── VISTA PARA ADMINISTRADOR (MARIAT) ─────────────────────────────────
 def administrativo(request):
-    if not request.user.is_authenticated or not request.user.is_staff:
+    if not request.user.is_authenticated:
         return redirect('login')
         
     nombre = request.session.get('empleado_nombre', request.user.username)
@@ -64,32 +130,30 @@ def estilista_view(request):
     if not request.user.is_authenticated:
         return redirect('login')
     
-    # 1. Identificar al estilista logueado
+    # 1. Intentamos sacar el nombre "bonito" de la sesión
+    nombre_display = request.session.get('empleado_nombre', request.user.username)
+    
+    # 2. Identificar al objeto empleado para filtrar las citas
     try:
         empleado_obj = Empleado.objects.get(usuario=request.user.username)
-        nombre_display = empleado_obj.nombre
+        if "(Estilista)" not in nombre_display and not request.user.is_staff:
+             nombre_display = f"{empleado_obj.nombre} (Estilista)"
     except Empleado.DoesNotExist:
         empleado_obj = None
-        nombre_display = request.user.username
 
     iniciales = ''.join(p[0].upper() for p in nombre_display.split()[:2]) if nombre_display else 'U'
     hoy = timezone.now().date()
     
-    # 2. Filtrar solo las citas de HOY para ESTE estilista
+    # 3. Filtrar solo las citas de HOY para ESTE estilista
     citas_hoy = Cita.objects.filter(fecha=hoy, empleado=empleado_obj).select_related(
         'mascota', 'mascota__raza', 'estado_cita'
     ).order_by('hora')
 
-    # 3. Mapeo de datos para el Dashboard (Crucial para que el HTML no salga vacío)
+    # Mapeo de datos para el Dashboard
     for cita in citas_hoy:
-        # Relación con DetalleCita para el nombre del servicio
         detalle = DetalleCita.objects.filter(cita=cita).select_related('servicio').first()
         cita.servicio_nombre = detalle.servicio.nombre if detalle else "Sin servicio"
-
-        # Nombre del estado para los Badges (Pendiente, En Proceso, etc.)
         cita.nombre_estado = cita.estado_cita.nombre if cita.estado_cita else "Pendiente"
-        
-        # Nombre de la raza para evitar errores de objeto
         cita.raza_nombre = cita.mascota.raza.nombre if cita.mascota.raza else "N/A"
 
     context = {
@@ -104,6 +168,7 @@ def estilista_view(request):
     }
     
     return render(request, "core/estilista_dashboard.html", context)
+
 # ── API CLIENTES ──────────────────────────────────────────────────────────────
 @csrf_exempt
 def api_clientes(request):
@@ -326,7 +391,9 @@ def api_cita_detalle(request, pk):
             return JsonResponse({"ok": False, "error": str(e)})
     elif request.method == "DELETE":
         try:
-            cita.delete()
+            estado_cancelada = EstadoCita.objects.get(nombre__icontains='Cancelada')
+            cita.estado_cita = estado_cancelada
+            cita.save()
             return JsonResponse({"ok": True})
         except Exception as e:
             return JsonResponse({"ok": False, "error": str(e)})
@@ -425,3 +492,78 @@ def api_actualizar_estado_cita(request, pk):
         except Exception as e:
             return JsonResponse({"ok": False, "error": str(e)})
     return JsonResponse({"ok": False, "error": "Método no permitido"})
+# ── SECCIÓN DE COMPATIBILIDAD CON API Y DASHBOARDS ──────────────────────────
+
+@csrf_exempt
+def api_gerencia_dashboard(request):
+    hoy = timezone.now().date()
+    return JsonResponse({
+        "ok": True, 
+        "citas_hoy": Cita.objects.filter(fecha=hoy).count(),
+        "total_clientes": Cliente.objects.count(),
+        "mensaje": "Dashboard de Gerencia listo"
+    })
+
+@csrf_exempt
+def api_admin_dashboard(request):
+    hoy = timezone.now().date()
+    return JsonResponse({
+        "ok": True, 
+        "citas_hoy": Cita.objects.filter(fecha=hoy).count(),
+        "mensaje": "Dashboard de Admin listo"
+    })
+
+@csrf_exempt
+def api_ger_empleados(request):
+    empleados = Empleado.objects.all()
+    data = [{"clave": e.clave, "nombre": e.nombre, "usuario": e.usuario} for e in empleados]
+    return JsonResponse({"ok": True, "data": data})
+
+@csrf_exempt
+def api_ger_empleado_detalle(request, pk):
+    return JsonResponse({"ok": True, "mensaje": "Detalle empleado listo"})
+
+@csrf_exempt
+def api_ger_ventas(request):
+    return JsonResponse({"ok": True, "data": []})
+
+@csrf_exempt
+def api_ger_servicios(request):
+    return JsonResponse({"ok": True, "data": []})
+
+@csrf_exempt
+def api_ger_reportes(request):
+    return JsonResponse({"ok": True, "data": []})
+
+# ── SECCIÓN FINAL DE COMPATIBILIDAD (SÓLO PEGAR UNA VEZ) ──────────────────
+
+@csrf_exempt
+def api_login(request):
+    """Permite que la App de Flutter use el mismo login que la web"""
+    return login_view(request)
+
+@csrf_exempt
+def api_ger_catalogos(request):
+    """Conecta la ruta de gerencia con la función de catálogos existente"""
+    return api_catalogos(request)
+
+@csrf_exempt
+def api_ger_reporte_ingresos(request):
+    return JsonResponse({"ok": True, "data": [], "mensaje": "Reporte de ingresos listo"})
+
+@csrf_exempt
+def api_ger_reporte_citas(request):
+    return JsonResponse({"ok": True, "data": [], "mensaje": "Reporte de citas listo"})
+
+@csrf_exempt
+def api_ger_reporte_empleados(request):
+    return JsonResponse({"ok": True, "data": [], "mensaje": "Reporte de empleados listo"})
+
+@csrf_exempt
+def api_ger_empleado_detalle(request, pk):
+    return JsonResponse({"ok": True, "mensaje": f"Detalle del empleado {pk} listo"})
+
+@csrf_exempt
+def api_ger_ventas(request):
+    return JsonResponse({"ok": True, "data": []})
+# ──────────────────────────────────────────────────────────────────────────

@@ -10,8 +10,8 @@
 
 <div class="card-table">
     <div class="card-header">
-        Lista de Trabajo de {{ empleado.nombre }}
-    </div>
+    Lista de Trabajo de {{ request.session.empleado_nombre }}
+</div>
     <div class="table-responsive">
         <table>
             <thead>
@@ -61,7 +61,8 @@
 
 <script>
 function actualizarCita(citaId, nuevoEstadoId) {
-    fetch(`/api/citas/${citaId}/estado/`, {
+    // La URL debe coincidir exactamente con tu urls.py
+    fetch(`/api/actualizar_estado_cita/${citaId}/`, { 
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -72,6 +73,7 @@ function actualizarCita(citaId, nuevoEstadoId) {
     .then(response => response.json())
     .then(data => {
         if (data.ok) {
+            // Animación opcional antes de recargar
             location.reload();
         } else {
             alert("Error: " + data.error);

@@ -15,46 +15,57 @@
             --dark-blue: #224abe;
         }
 
-        *{margin:0;padding:0;box-sizing:border-box;}
-        body{font-family:'Segoe UI', Roboto, sans-serif; background:#f8f9fc; color:#5a5c69;}
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background: #f8f9fc; color: #5a5c69; }
         
-        .app-container{display:flex; min-height:100vh;}
+        .app-container { display: flex; min-height: 100vh; }
 
         /* SIDEBAR */
-        .sidebar{width:250px; background:linear-gradient(180deg, var(--primary) 0%, var(--dark-blue) 100%); color:white; position:fixed; height:100vh; transition:0.3s; z-index: 1000;}
-        .sidebar-header{padding:20px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.1); font-size:1.1rem; font-weight:bold;}
-        .menu-section{padding:15px 0;}
-        .section-title{padding:0 20px 10px; font-size:0.7rem; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:1px;}
-        .menu-item{padding:12px 20px; display:flex; align-items:center; gap:12px; color:rgba(255,255,255,0.8); text-decoration:none; transition:0.2s; border-left:3px solid transparent;}
-        .menu-item:hover, .menu-item.active{background:rgba(255,255,255,0.1); color:white; border-left-color:white;}
+        .sidebar { width: 250px; background: linear-gradient(180deg, var(--primary) 0%, var(--dark-blue) 100%); color: white; position: fixed; height: 100vh; transition: 0.3s; z-index: 1000; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; font-weight: bold; }
+        .menu-section { padding: 15px 0; }
+        .section-title { padding: 0 20px 10px; font-size: 0.7rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; }
+        .menu-item { padding: 12px 20px; display: flex; align-items: center; gap: 12px; color: rgba(255,255,255,0.8); text-decoration: none; transition: 0.2s; border-left: 3px solid transparent; }
+        .menu-item:hover, .menu-item.active { background: rgba(255,255,255,0.1); color: white; border-left-color: white; }
 
-        /* MAIN */
-        .main-content{margin-left:250px; flex:1; display:flex; flex-direction:column; transition: 0.3s; min-width: 0;}
-        .topbar{background:white; height:70px; display:flex; align-items:center; justify-content:space-between; padding:0 25px; box-shadow:0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 900;}
+        /* MAIN CONTENT */
+        .main-content { margin-left: 250px; flex: 1; display: flex; flex-direction: column; transition: 0.3s; min-width: 0; }
+        .topbar { background: white; height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 900; }
         
-        .user-pill{display:flex; align-items:center; gap:10px; font-weight:600;}
-        .avatar-circle{width:35px; height:35px; background:var(--primary); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem;}
+        .user-pill { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+        .avatar-circle { width: 35px; height: 35px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
 
-        /* BOTÓN MENÚ MÓVIL */
         .menu-toggle { display: none; background: var(--primary); color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; }
 
-        .content-area{padding:20px;}
+        .content-area { padding: 20px; }
 
-        /* TABLAS RESPONSIVAS */
-        .card-table{background:white; border-radius:10px; box-shadow:0 0.15rem 1.75rem 0 rgba(58,59,69,0.15); overflow:hidden;}
-        .table-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        table{width:100%; border-collapse:collapse; min-width: 600px; /* Evita que la tabla se colapse demasiado */}
-        th{text-align:left; font-size:0.8rem; text-transform:uppercase; color:#858796; padding:12px; border-bottom:2px solid #e3e6f0;}
-        td{padding:15px 12px; border-bottom:1px solid #f1f3f8; font-size:0.9rem;}
-        
+        /* TABLAS Y CARDS */
+        .card-table { background: white; border-radius: 10px; box-shadow: 0 0.15rem 1.75rem 0 rgba(58,59,69,0.15); overflow: hidden; margin-top: 20px; }
+        .card-header { background: #f8f9fc; padding: 15px 20px; border-bottom: 1px solid #e3e6f0; font-weight: bold; color: var(--primary); }
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        th { text-align: left; font-size: 0.8rem; text-transform: uppercase; color: #858796; padding: 12px; border-bottom: 2px solid #e3e6f0; }
+        td { padding: 15px 12px; border-bottom: 1px solid #f1f3f8; font-size: 0.9rem; vertical-align: middle; }
+
+        /* BOTONES DE ACCIÓN */
+        .btn-sm { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: 0.2s; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-start { background: var(--info); color: white; }
+        .btn-finish { background: var(--success); color: white; }
+
+        /* ESTADOS / BADGES */
+        .badge { padding: 5px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: bold; color: white; display: inline-block; }
+        .bg-pending { background: #858796; } 
+        .bg-process { background: var(--warning); color: #333 !important; } 
+        .bg-done { background: var(--success); }
+
         /* RESPONSIVO */
         @media (max-width: 768px) {
-            .sidebar { left: -250px; } /* Esconde el menú a la izquierda */
-            .sidebar.active { left: 0; } /* Lo muestra cuando se activa */
+            .sidebar { left: -250px; }
+            .sidebar.active { left: 0; }
             .main-content { margin-left: 0; }
             .menu-toggle { display: block; }
             .topbar { padding: 0 15px; }
-            .user-pill span { display: none; } /* Esconde nombre en móvil para dar espacio */
+            .user-pill span { display: none; }
         }
     </style>
 </head>
@@ -64,7 +75,7 @@
             <div class="sidebar-header">🐾 Estética Canina</div>
             <nav class="menu-section">
                 <div class="section-title">Menú Groomer</div>
-                <a href="#" class="menu-item active">📅 <span>Mi Agenda</span></a>
+                <a href="{% url 'estilista_dashboard' %}" class="menu-item active">📅 <span>Mi Agenda</span></a>
                 
                 {% if user.is_staff %}
                 <div class="section-title">Administración</div>
@@ -80,16 +91,19 @@
         <main class="main-content">
             <header class="topbar">
                 <button class="menu-toggle" onclick="toggleMenu()">☰</button>
-                
                 <div style="font-style: italic; color: #b7b9cc;">Panel de Control Web</div>
+                
                 <div class="user-pill">
-                    <span>{{ user.username|capfirst }} (Estilista)</span>
-                    <div class="avatar-circle">{{ user.username|slice:":1"|upper }}</div>
+                    <span>{{ request.session.empleado_nombre|default:user.username }}</span>
+                    <div class="avatar-circle">
+                        {{ empleado.iniciales|default:user.username|slice:":1"|upper }}
+                    </div>
                 </div>
             </header>
 
             <div class="content-area">
-                {% block content %}{% endblock %}
+                {% block content %}
+                {% endblock %}
             </div>
         </main>
     </div>
@@ -99,7 +113,6 @@
             document.getElementById('sidebar').classList.toggle('active');
         }
         
-        // Cerrar menú si haces clic fuera de él (opcional para móvil)
         document.addEventListener('click', function(event) {
             const sidebar = document.getElementById('sidebar');
             const toggleBtn = document.querySelector('.menu-toggle');
